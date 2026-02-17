@@ -11,7 +11,8 @@ async def main(page: ft.Page):
         "df_excel": None, 
         "excel_path": None,
         "target_emails": set(),
-        "email_to_assigned_id": {}  # 画面上で確定したID（既存or新規）を保存用
+        "email_to_assigned_id": {},  # 画面上で確定したID（既存or新規）を保存用
+        "new_id_emails": set(),
     }
 
     log_display = ft.Text("ファイルを読み込んでください", color="blue")
@@ -62,8 +63,8 @@ async def main(page: ft.Page):
             page.update()
             return
 
-        if not state["target_emails"]:
-            log_display.value = "エラー: 照合を実行して、対象（オレンジ/赤）があるか確認してください"
+        if not state["new_id_emails"]:
+            log_display.value = "エラー: 照合を実行して、対象（新規ID）があるか確認してください"
             page.update()
             return
 
@@ -78,7 +79,7 @@ async def main(page: ft.Page):
                 df_upload = pd.read_excel(state["excel_path"], sheet_name="Upload", engine='openpyxl')
                 
                 # 対象のメールアドレスのみ抽出
-                df_filtered = df_upload[df_upload["email"].astype(str).isin(state["target_emails"])].copy()
+                df_filtered = df_upload[df_upload["email"].astype(str).isin(state["new_id_emails"])].copy()
                 
                 # --- IDの書き込み処理 ---
                 # 1列目 (iloc[:, 0]) に、照合時に決定したIDをマップする
@@ -164,6 +165,7 @@ async def main(page: ft.Page):
                     display_id = str(next_new_id)
                     next_new_id += 1
                     id_color = "purple"
+                    state["new_id_emails"].add(email_to_check)
                 
                 # 確定したIDを保存しておく（出力用）
                 state["email_to_assigned_id"][email_to_check] = display_id
